@@ -1,0 +1,53 @@
+---
+
+- name: Kubernetes Apps | Set API Gateway template list
+  set_fact:
+    api_gateway_templates:
+      - name: install
+        file: api-gateway-install.yml
+        url: "{{ api_gateway_resources_url }}"
+  when:
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+
+- name: Kubernetes Apps | Download API Gateway remote manifests
+  include_tasks: "../../../download/tasks/download_file.yml"
+  vars:
+    download_api_gateway:
+      enabled: "{{ api_gateway_enabled }}"
+      file: true
+      dest: "{{ local_release_dir }}/{{ item.file }}"
+      url: "{{ item.url }}"
+      unarchive: false
+      owner: "root"
+      mode: 0644
+      sha256: ""
+    download: "{{ download_defaults | combine(download_api_gateway) }}"
+  with_items: "{{ api_gateway_templates | selectattr('url', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+
+- name: Kubernetes Apps | Copy API Gateway remote manifests from download dir
+  ansible.posix.synchronize:
+    src: "{{ local_release_dir }}/{{ item.file }}"
+    dest: "{{ kube_config_dir }}/{{ item.file }}"
+    compress: no
+    perms: yes
+    owner: no
+    group: no
+  delegate_to: "{{ inventory_hostname }}"
+  with_items: "{{ api_gateway_templates | selectattr('url', 'defined') | list }}"
+  when:
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+
+- name: Kubernetes Apps | Install API Gateway
+  become: yes
+  kube:
+    name: API Gateway
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/{{ item.file }}"
+    state: latest
+  with_items: "{{ api_gateway_templates }}"
+  when:
+    - "inventory_hostname == groups['kube_control_plane'][0]"

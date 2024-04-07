@@ -38,6 +38,7 @@
     - { role: kubernetes/control-plane, tags: master }
     - { role: kubernetes/client, tags: client }
     - { role: kubernetes-apps/cluster_roles, tags: cluster-roles }
+    - { role: kubernetes-apps/api_gateway, tags: api-gateway }
 
 - name: Invoke kubeadm and install a CNI
   hosts: k8s_cluster

@@ -1,0 +1,7 @@
+---
+api_gateway_enabled: false
+api_gateway_version: v1.0.0
+api_gateway_experimental: false
+
+
+api_gateway_resources_url: https://github.com/kubernetes-sigs/gateway-api/releases/download/{{ api_gateway_version }}/{{ 'experimental' if api_gateway_experimental else 'standard'}}-install.yaml
